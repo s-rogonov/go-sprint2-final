@@ -23,9 +23,13 @@ func TestFieldsPresented(t *testing.T) {
 		checkFieldPresence(t, rt, consts.ModelTaskParentField)
 		checkFieldPresence(t, rt, consts.ModelTaskParentField+"ID")
 
+		checkFieldPresence(t, rt, consts.ModelTaskLastWorkerField)
+		checkFieldPresence(t, rt, consts.ModelTaskLastWorkerField+"ID")
+
 		checkFieldPresence(t, rt, consts.ModelTaskSubtasksField)
 		checkFieldPresence(t, rt, consts.ModelTaskWorkersField)
 		checkFieldPresence(t, rt, consts.ModelTaskIsDoneField)
+		checkFieldPresence(t, rt, consts.ModelTaskIsReadyField)
 	}
 
 	{

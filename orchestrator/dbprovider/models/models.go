@@ -9,6 +9,7 @@ import (
 type Timings struct {
 	gorm.Model
 
+	Factor         float32 // multiplier, applied to duration, defines worker timeout (deadline)
 	Addition       time.Duration
 	Multiplication time.Duration
 	Subtraction    time.Duration
@@ -35,12 +36,12 @@ type Task struct {
 	Duration  time.Duration
 	Index     uint
 
-	Parent       *Task  `gorm:"foreignkey:ParentID;association_foreignkey:ID"`
-	ParentID     uint   `gorm:"index"`
-	Target       *Query `gorm:"foreignkey:TargetID;association_foreignkey:ID"`
-	TargetID     uint   `gorm:"index"`
-	LastWorker   *Query `gorm:"foreignkey:LastWorkerID;association_foreignkey:ID"`
-	LastWorkerID uint   `gorm:"index"`
+	Parent       *Task   `gorm:"foreignkey:ParentID;association_foreignkey:ID"`
+	ParentID     uint    `gorm:"index"`
+	Target       *Query  `gorm:"foreignkey:TargetID;association_foreignkey:ID"`
+	TargetID     uint    `gorm:"index"`
+	LastWorker   *Worker `gorm:"foreignkey:LastWorkerID;association_foreignkey:ID"`
+	LastWorkerID uint    `gorm:"index"`
 
 	TotalSubtasks    uint
 	FinishedSubtasks uint

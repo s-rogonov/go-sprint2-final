@@ -9,6 +9,7 @@ import (
 
 func CreateDefaults(db *gorm.DB) error {
 	result := db.Create(&models.Timings{
+		Factor:         2.0,
 		Addition:       1 * time.Second,
 		Multiplication: 1 * time.Second,
 		Subtraction:    1 * time.Second,

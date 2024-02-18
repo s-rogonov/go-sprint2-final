@@ -1,13 +1,17 @@
 package dbprovider
 
 import (
+	"context"
+	"database/sql"
 	"errors"
 	"fmt"
+	"time"
 
 	"consts"
 	"dbprovider/helpers"
 	"dbprovider/models"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 var (
@@ -18,6 +22,10 @@ var (
 
 	ErrWorkerAlreadyCompleted = errors.New("worker entity already completed and has a valid result")
 )
+
+func (m *manager) WithContext(ctx context.Context) Actions {
+	return &manager{db: m.db.WithContext(ctx)}
+}
 
 func (m *manager) InitDB() error {
 	if err := helpers.MigrateSchemes(m.db); err != nil {
@@ -131,11 +139,93 @@ func (m *manager) UpdateQuery(query *models.Query) error {
 	})
 }
 
-func (m *manager) CreateWorkers(amount uint, factor float32) (workers []*models.Worker, err error) {
-	err = m.db.Transaction(func(tx *gorm.DB) error {
+func (m *manager) CreateWorkers(amount uint) (workers []*models.Worker, err error) {
+	err = m.db.Transaction(func(tx *gorm.DB) (err error) {
+		var rows *sql.Rows
+		{ // run rows selector
+			rows, err =
+				tx.Clauses(
+					clause.Locking{
+						Strength: clause.LockingStrengthUpdate,    // prevent rows from access from other threads
+						Options:  clause.LockingOptionsSkipLocked, // skip locked rows
+					},
+				).Model(
+					models.Task{},
+				).Preload(
+					consts.ModelTaskLastWorkerField,
+				).Where(
+					models.Task{
+						IsDone:  false,
+						IsReady: true,
+					},
+					consts.ModelTaskIsDoneField,
+					consts.ModelTaskIsReadyField,
+				).Rows()
+
+			defer func() {
+				err2 := rows.Close()
+				if err == nil {
+					err = err2
+				}
+			}()
+
+			if err != nil {
+				return err
+			}
+		}
+
+		now := time.Now()
+		timings := models.Timings{}
+		if err = m.db.First(&timings).Error; err != nil {
+			return err
+		}
+
+		var readyTasks []*models.Task
+
+		for rows.Next() && uint(len(readyTasks)) < amount {
+			task := &models.Task{}
+
+			// ScanRows scans a row into a struct
+			if err = tx.ScanRows(rows, task); err != nil {
+				return err
+			}
+
+			// Perform operations on each task
+			if task.LastWorker != nil {
+				deadline := task.LastWorker.CreatedAt.Add(time.Duration(timings.Factor * float32(task.Duration)))
+				if now.Before(deadline) {
+					continue // task is still in progress
+				}
+			}
+
+			readyTasks = append(readyTasks, task)
+		}
+
+		if err = rows.Err(); err != nil {
+			return err
+		}
+
+		workers = make([]*models.Worker, len(readyTasks))
+		for i, task := range readyTasks {
+			workers[i] = &models.Worker{
+				Target: task,
+			}
+			task.LastWorker = workers[i]
+			task.LastWorkerID = 0
+
+			if err = m.db.Save(task).Error; err != nil {
+				return err
+			}
+		}
 
 		return nil
 	})
+
+	// check for error
+	if err != nil {
+		return nil, err
+	}
+
 	return
 }
 

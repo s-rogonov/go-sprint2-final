@@ -1,6 +1,7 @@
 package dbprovider
 
 import (
+	"context"
 	"os"
 
 	"consts"
@@ -12,6 +13,7 @@ import (
 
 type Actions interface {
 	getDB() *gorm.DB // for test purposes only
+	WithContext(ctx context.Context) Actions
 	InitDB() error
 
 	UpdateTimings(timings *models.Timings) error
@@ -19,7 +21,7 @@ type Actions interface {
 	NewQuery(query *models.Query) error
 	UpdateQuery(query *models.Query) error
 
-	CreateWorkers(amount uint, factor float32) ([]*models.Worker, error)
+	CreateWorkers(amount uint) ([]*models.Worker, error)
 	SetWorkResult(workerID uint, result float64) error
 }
 
