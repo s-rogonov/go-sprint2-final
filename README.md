@@ -80,6 +80,61 @@ Answer:
 ]
 ```
 
+---
+
+### 3. `GET /workers`
+
+*Return workers status; Basically workers are kinda computing resources; By default, `limit=3` asc; Specify `{id}` to
+select specific worker*
+
+Example (`/workers/{id}`):
+
+```bash
+curl -X GET localhost:8181/workers/12
+```
+
+Answer:
+
+```json
+{
+  "expr": "1 * 2",
+  "id": 12,
+  "left": 89.11674,
+  "status": "computing"
+}
+```
+
+Example (`/workers?limit={n}`):
+
+```bash
+curl -X GET localhost:8181/workers
+```
+
+Answer:
+
+```json
+[
+  {
+    "expr": "1 * 2",
+    "id": 12,
+    "left": 99.63454,
+    "status": "computing"
+  },
+  {
+    "deadline": "2024-02-18T23:32:51.984627591+03:00",
+    "expr": "1 + 2",
+    "id": 11,
+    "status": "timeout"
+  },
+  {
+    "expr": "4 - 5",
+    "id": 10,
+    "left": 99.6339,
+    "status": "retrieving"
+  }
+]
+```
+
 ## Orchestrator (PUT/POST)
 
 ---

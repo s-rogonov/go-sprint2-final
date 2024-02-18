@@ -36,3 +36,38 @@ func (m *manager) GetQuery(id uint) (q *models.Query, err error) {
 
 	return
 }
+
+func (m *manager) GetWorkers(limit uint) (ws []*models.Worker, err error) {
+	m.rwMutex.RLock()
+	defer m.rwMutex.RUnlock()
+
+	err = m.db.Preload(
+		consts.ModelWorkerTargetField,
+	).Preload(
+		consts.ModelWorkerTargetField + "." + consts.ModelTaskSubtasksField,
+	).Limit(int(limit)).Order("`workers`.`id` desc").Find(&ws).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	return
+}
+
+func (m *manager) GetWorker(id uint) (w *models.Worker, err error) {
+	m.rwMutex.RLock()
+	defer m.rwMutex.RUnlock()
+
+	w = &models.Worker{}
+	err = m.db.Joins(
+		consts.ModelWorkerTargetField,
+	).Preload(
+		consts.ModelWorkerTargetField+"."+consts.ModelTaskSubtasksField,
+	).First(w, id).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	return
+}

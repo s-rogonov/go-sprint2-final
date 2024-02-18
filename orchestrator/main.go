@@ -36,6 +36,11 @@ func main() {
 		r.Get("/{id}", handlers.GetQuery)
 	})
 
+	r.Route("/workers", func(r chi.Router) {
+		r.Get("/", handlers.GetLastWorkers)
+		r.Get("/{id}", handlers.GetWorker)
+	})
+
 	err := http.ListenAndServe(fmt.Sprintf(`:%s`, port), r)
 	if err != nil {
 		panic(err)

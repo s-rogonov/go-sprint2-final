@@ -29,6 +29,8 @@ type Actions interface {
 	GetTimings(timings *models.Timings) error
 	GetQueries(limit uint) (qs []*models.Query, err error)
 	GetQuery(id uint) (q *models.Query, err error)
+	GetWorkers(limit uint) (qs []*models.Worker, err error)
+	GetWorker(id uint) (w *models.Worker, err error)
 }
 
 type manager struct {

@@ -10,6 +10,62 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
+func GetLastWorkers(w http.ResponseWriter, r *http.Request) {
+	limitStr := r.URL.Query().Get("limit")
+	if limitStr == "" {
+		limitStr = "3"
+	}
+
+	limit, err := strconv.ParseUint(limitStr, 10, 0)
+	if err != nil {
+		HTTPErrorUnavailable(w, err)
+		return
+	}
+
+	ws, err := dbprovider.Manager.GetWorkers(uint(limit))
+	if err != nil {
+		HTTPErrorUnavailable(w, err)
+		return
+	}
+
+	tm := &models.Timings{}
+	if err := dbprovider.Manager.GetTimings(tm); err != nil {
+		HTTPErrorUnavailable(w, err)
+		return
+	}
+
+	var answer []map[string]any
+	for _, wk := range ws {
+		answer = append(answer, worker2map(wk, tm.Factor))
+	}
+
+	SendJSON(w, answer)
+}
+
+func GetWorker(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+
+	id, err := strconv.ParseUint(idStr, 10, 0)
+	if err != nil {
+		HTTPErrorUnavailable(w, err)
+		return
+	}
+
+	wk, err := dbprovider.Manager.GetWorker(uint(id))
+	if err != nil {
+		HTTPErrorUnavailable(w, err)
+		return
+	}
+
+	tm := &models.Timings{}
+	if err := dbprovider.Manager.GetTimings(tm); err != nil {
+		HTTPErrorUnavailable(w, err)
+		return
+	}
+
+	SendJSON(w, worker2map(wk, tm.Factor))
+}
+
 func GetLastQueries(w http.ResponseWriter, r *http.Request) {
 	limitStr := r.URL.Query().Get("limit")
 	if limitStr == "" {
