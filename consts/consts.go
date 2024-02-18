@@ -5,9 +5,18 @@ const (
 	DbProductionName = "sqlite.db"
 	DbTestName       = "test_sqlite.db"
 
-	EnvPort = "PORT"
+	EnvPort     = "PORT"
+	EnvMaster   = "MASTER"
+	EnvNWorkers = "NWORKERS"
+	EnvBatch    = "BATCH"
+	EnvDelay    = "DELAY"
 
 	OrchestratorDefaultPort = "8181"
+
+	AgentDefaultMaster  = "localhost:8181"
+	AgentDefaultWorkers = 5
+	AgentDefaultBatch   = 2
+	AgentDefaultDelay   = 10
 
 	ModelTaskParentField     = "ParentTask"
 	ModelTaskTargetField     = "TargetQuery"
