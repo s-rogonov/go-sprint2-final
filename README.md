@@ -23,3 +23,25 @@ Answer:
   "id": 1
 }
 ```
+
+---
+
+> PUT /query
+
+*Updates existing query; Query should have parse error, else changes will be rejected*
+
+Example:
+
+```bash
+curl -X PUT localhost:8181/query -d '{"id":4,"expr":"1+2"}'
+```
+
+Answer:
+
+```json
+{
+  "errorMsg": "",
+  "hasError": false,
+  "id": 4
+}
+```
