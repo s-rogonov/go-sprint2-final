@@ -75,6 +75,7 @@ func initQueryTasks(tx *gorm.DB, query *models.Query) error {
 
 	for _, t := range query.Tasks {
 		if t.IsDone {
+			query.PlainNumbers += 1
 			err := helpers.FinishTask(nil, t, t.Result)
 			if err != nil {
 				return err

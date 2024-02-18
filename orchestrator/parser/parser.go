@@ -1,7 +1,12 @@
 package parser
 
 import (
+	"errors"
 	"fmt"
+	"strconv"
+	"time"
+
+	"dbprovider/models"
 )
 
 const (
@@ -144,16 +149,63 @@ func infix2postfix(tokens []token) ([]token, error) {
 	return stream, nil
 }
 
-// func ParseExpression(expr string) (*models.Query, error) {
-// 	tokens, err := tokenize(expr)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-//
-// 	_, err = infix2postfix(tokens)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-//
-// 	return nil, nil
-// }
+func buildAST(tokens []token, durations map[string]time.Duration) (*models.Query, error) {
+	var stack []*models.Task
+	q := &models.Query{}
+
+	for _, t := range tokens {
+		switch t.TkType {
+		case TkNumber:
+			val, err := strconv.ParseFloat(t.TkText, 64)
+			if err != nil {
+				return nil, fmt.Errorf(`cannot parse number "%v" at %v`, t.TkText, t.TkStartPos)
+			}
+			task := &models.Task{
+				Result: val,
+			}
+			stack = append(stack, task)
+			q.Tasks = append(q.Tasks, task)
+		default:
+			d, ok := durations[t.TkText]
+			if !ok {
+				return nil, fmt.Errorf(`no duration for operation "%v" at %v`, t.TkText, t.TkStartPos)
+			}
+			n := len(stack)
+			if n < 2 {
+				return nil, fmt.Errorf(`not enough arguments for "%v" at %v`, t.TkText, t.TkStartPos)
+			}
+			arg1, arg2 := stack[n-2], stack[n-1]
+			stack = stack[:n-2]
+			task := &models.Task{
+				Operation: t.TkText,
+				Duration:  d,
+				Subtasks:  []*models.Task{arg1, arg2},
+			}
+			stack = append(stack, task)
+			q.Tasks = append(q.Tasks, task)
+		}
+	}
+
+	if len(stack) > 1 {
+		return nil, errors.New("unused arguments are left in expression")
+	}
+	if len(stack) == 0 {
+		return nil, errors.New("there is no expression")
+	}
+
+	return q, nil
+}
+
+func ParseExpression(expr string, durations map[string]time.Duration) (*models.Query, error) {
+	tokens, err := tokenize(expr)
+	if err != nil {
+		return nil, err
+	}
+
+	postfix, err := infix2postfix(tokens)
+	if err != nil {
+		return nil, err
+	}
+
+	return buildAST(postfix, durations)
+}
