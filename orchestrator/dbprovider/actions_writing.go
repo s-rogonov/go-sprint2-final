@@ -78,8 +78,6 @@ func initQueryTasks(tx *gorm.DB, query *models.Query) error {
 		}
 	}
 
-	helpers.DefaultsForQuery(query)
-
 	for _, t := range query.Tasks {
 		if t.IsDone {
 			query.PlainNumbers += 1
@@ -113,6 +111,8 @@ func (m *manager) NewQuery(query *models.Query) error {
 	}
 
 	return m.db.Transaction(func(tx *gorm.DB) error {
+		helpers.DefaultsForQuery(query)
+
 		if err := initQueryTasks(tx, query); err != nil {
 			return err
 		}
@@ -148,6 +148,8 @@ func (m *manager) UpdateQuery(query *models.Query) error {
 		if existed.BadMessage == "" {
 			return ErrGoodQueryCannotBeUpdated
 		}
+
+		helpers.DefaultsForQuery(query)
 
 		if err := initQueryTasks(tx, query); err != nil {
 			return err
