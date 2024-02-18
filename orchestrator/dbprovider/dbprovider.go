@@ -27,8 +27,8 @@ type Actions interface {
 }
 
 type manager struct {
-	db          *gorm.DB
-	lock4update sync.Mutex
+	db      *gorm.DB
+	rwMutex *sync.RWMutex
 }
 
 func (m *manager) getDB() *gorm.DB {
@@ -49,6 +49,7 @@ func InitConnection() {
 		panic(err)
 	}
 	Manager = &manager{
-		db: db,
+		db:      db,
+		rwMutex: &sync.RWMutex{},
 	}
 }

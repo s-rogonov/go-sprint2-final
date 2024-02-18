@@ -23,10 +23,13 @@ var (
 )
 
 func (m *manager) WithContext(ctx context.Context) Actions {
-	return &manager{db: m.db.WithContext(ctx)}
+	return &manager{db: m.db.WithContext(ctx), rwMutex: m.rwMutex}
 }
 
 func (m *manager) InitDB() error {
+	m.rwMutex.Lock()
+	defer m.rwMutex.Unlock()
+
 	if err := helpers.MigrateSchemes(m.db); err != nil {
 		return err
 	}
@@ -43,6 +46,8 @@ func (m *manager) InitDB() error {
 }
 
 func (m *manager) UpdateTimings(timings *models.Timings) error {
+	m.rwMutex.Lock()
+	defer m.rwMutex.Unlock()
 	return m.db.Save(timings).Error
 }
 
@@ -92,6 +97,9 @@ func initQueryTasks(tx *gorm.DB, query *models.Query) error {
 //
 // Also creates nested tasks
 func (m *manager) NewQuery(query *models.Query) error {
+	m.rwMutex.Lock()
+	defer m.rwMutex.Unlock()
+
 	if err := helpers.CheckQueryContract(query); err != nil {
 		return err
 	}
@@ -111,6 +119,9 @@ func (m *manager) NewQuery(query *models.Query) error {
 //   - query passes helpers.CheckQueryContract
 //   - query with such ID has a non-empty consts.ModelQueryBadMessageField in DB
 func (m *manager) UpdateQuery(query *models.Query) error {
+	m.rwMutex.Lock()
+	defer m.rwMutex.Unlock()
+
 	if query.ID == 0 {
 		return ErrUpdateQueryWithoutID
 	}
@@ -139,8 +150,8 @@ func (m *manager) UpdateQuery(query *models.Query) error {
 }
 
 func (m *manager) CreateWorkers(amount uint) (workers []*models.Worker, err error) {
-	m.lock4update.Lock()
-	defer m.lock4update.Unlock()
+	m.rwMutex.Lock()
+	defer m.rwMutex.Unlock()
 
 	err = m.db.Transaction(func(tx *gorm.DB) (err error) {
 		var readyTasks []*models.Task
@@ -229,6 +240,9 @@ func (m *manager) CreateWorkers(amount uint) (workers []*models.Worker, err erro
 }
 
 func (m *manager) SetWorkResult(workerID uint, result float64) error {
+	m.rwMutex.Lock()
+	defer m.rwMutex.Unlock()
+
 	return m.db.Transaction(func(tx *gorm.DB) error {
 		worker := &models.Worker{}
 
