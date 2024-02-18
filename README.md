@@ -26,6 +26,60 @@ Answer:
 }
 ```
 
+---
+
+### 2. `GET /queries`
+
+*Return queries; By default, `limit=3` asc; Specify `{id}` to select specific query*
+
+Example (`/queries/{id}`):
+
+```bash
+curl -X GET 'localhost:8181/queries/1'
+```
+
+Answer:
+
+```json
+{
+  "expr": "1+2",
+  "id": 1,
+  "result": 3,
+  "status": "finished"
+}
+```
+
+Example (`/queries?limit={n}`):
+
+```bash
+curl -X GET 'localhost:8181/queries?limit=3'
+```
+
+Answer:
+
+```json
+[
+  {
+    "expr": "1+2+3",
+    "id": 5,
+    "progress": "0/2",
+    "status": "in-progress"
+  },
+  {
+    "expr": "18+3*(4-5)",
+    "id": 4,
+    "progress": "0/3",
+    "status": "in-progress"
+  },
+  {
+    "expr": "3*4-5",
+    "id": 3,
+    "progress": "0/2",
+    "status": "in-progress"
+  }
+]
+```
+
 ## Orchestrator (PUT/POST)
 
 ---

@@ -2,16 +2,57 @@ package handlers
 
 import (
 	"net/http"
+	"strconv"
 	"time"
 
 	"dbprovider"
 	"dbprovider/models"
+	"github.com/go-chi/chi/v5"
 )
 
-// func GetQueries(writer http.ResponseWriter, request *http.Request) {
-//
-// }
-//
+func GetLastQueries(w http.ResponseWriter, r *http.Request) {
+	limitStr := r.URL.Query().Get("limit")
+	if limitStr == "" {
+		limitStr = "3"
+	}
+
+	limit, err := strconv.ParseUint(limitStr, 10, 0)
+	if err != nil {
+		HTTPErrorUnavailable(w, err)
+		return
+	}
+
+	qs, err := dbprovider.Manager.GetQueries(uint(limit))
+	if err != nil {
+		HTTPErrorUnavailable(w, err)
+		return
+	}
+
+	var answer []map[string]any
+	for _, q := range qs {
+		answer = append(answer, query2map(q))
+	}
+
+	SendJSON(w, answer)
+}
+
+func GetQuery(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+
+	id, err := strconv.ParseUint(idStr, 10, 0)
+	if err != nil {
+		HTTPErrorUnavailable(w, err)
+		return
+	}
+
+	q, err := dbprovider.Manager.GetQuery(uint(id))
+	if err != nil {
+		HTTPErrorUnavailable(w, err)
+		return
+	}
+
+	SendJSON(w, query2map(q))
+}
 
 type TimingsData struct {
 	Factor float32 `json:"factor"`
