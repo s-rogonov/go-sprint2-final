@@ -28,7 +28,7 @@ Answer:
 
 > PUT /query
 
-*Updates existing query; Query should have parse error, else changes will be rejected*
+*Updates existing query; Updated query should have parse error, else changes will be rejected*
 
 Example:
 
