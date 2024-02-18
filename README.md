@@ -4,7 +4,7 @@
 
 ---
 
-> POST /query
+### 1. `POST /query`
 
 *Creates new query*
 
@@ -26,7 +26,7 @@ Answer:
 
 ---
 
-> PUT /query
+### 2. `PUT /query`
 
 *Updates existing query; Updated query should have parse error, else changes will be rejected*
 
@@ -48,7 +48,7 @@ Answer:
 
 ---
 
-> POST /tasks
+### 3. `POST /tasks`
 
 *Returns operations to process; Amount of operations are limited by argument*
 
@@ -85,7 +85,7 @@ Answer (there is only 2 operations available):
 
 ---
 
-> PUT /result
+### 4. `PUT /result`
 
 *Set operation result*
 
