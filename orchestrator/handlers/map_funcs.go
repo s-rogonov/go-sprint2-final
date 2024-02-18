@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"fmt"
-	"log"
 	"time"
 
 	"dbprovider/models"
@@ -53,7 +52,7 @@ func worker2map(w *models.Worker, factor float32) map[string]any {
 	deadline := w.CreatedAt.Add(time.Duration(factor * float32(w.TargetTask.Duration)))
 	now := time.Now()
 
-	log.Println(now, eta, deadline, w.TargetTask.Duration)
+	// log.Println(now, eta, deadline, w.TargetTask.Duration)
 
 	if w.IsDone {
 		return map[string]any{

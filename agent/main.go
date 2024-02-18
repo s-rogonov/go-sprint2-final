@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -67,6 +68,7 @@ func main() {
 				mx.Lock()
 				workers -= 1
 				mx.Unlock()
+				log.Println(r.Id, "sleep for", r.Time)
 				time.Sleep(r.Time)
 
 				a, b := r.Args[0], r.Args[1]
@@ -82,12 +84,16 @@ func main() {
 					c = a / b
 				}
 
+				log.Println(r.Id, "got result", c)
+
 				go func() {
-					url := fmt.Sprintf(`%s/result`, master)
+					url := fmt.Sprintf(`http://%s/result`, master)
 					data := Result{
 						Id:     r.Id,
 						Result: c,
 					}
+
+					log.Println("sending...", data)
 
 					binary, err := json.Marshal(data)
 					if err != nil {
@@ -114,6 +120,8 @@ func main() {
 						log.Print(err)
 						return
 					}
+
+					log.Println("finished", data)
 				}()
 
 				mx.Lock()
@@ -124,7 +132,7 @@ func main() {
 	}
 
 	t := time.Tick(delay)
-	for _ = range t {
+	for range t {
 		mx.Lock()
 
 		reqCount := workers
@@ -134,16 +142,13 @@ func main() {
 
 		mx.Unlock()
 
-		binary, err := json.Marshal(data)
-		if err != nil {
-			log.Print(err)
-			return
-		}
+		url := fmt.Sprintf(`http://%s/tasks`, master)
+		binary := []byte(strconv.Itoa(reqCount))
 
-		req, err := http.NewRequest(http.MethodPut, url, bytes.NewBuffer(binary))
+		req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(binary))
 		if err != nil {
 			log.Print(err)
-			return
+			continue
 		}
 
 		req.Header.Set("Content-Type", "application/json")
@@ -152,12 +157,32 @@ func main() {
 		resp, err := client.Do(req)
 		if err != nil {
 			log.Print(err)
-			return
+			continue
 		}
+
+		all, err := io.ReadAll(resp.Body)
+		if err != nil {
+			log.Print(err)
+			if err := resp.Body.Close(); err != nil {
+				log.Print(err)
+			}
+			continue
+		}
+
 		err = resp.Body.Close()
 		if err != nil {
 			log.Print(err)
-			return
+			continue
+		}
+
+		var data []OperationData
+		if err := json.Unmarshal(all, &data); err != nil {
+			log.Print(err)
+			continue
+		}
+
+		for _, d := range data {
+			ch <- d
 		}
 
 	}
