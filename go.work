@@ -1,0 +1,9 @@
+go 1.18
+
+use (
+	agent
+	orchestrator
+	orchestrator/dbprovider
+	web
+	consts
+)
