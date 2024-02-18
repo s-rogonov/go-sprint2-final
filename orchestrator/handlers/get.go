@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http"
+	"time"
 
 	"dbprovider"
 	"dbprovider/models"
@@ -30,10 +31,10 @@ func GetTimings(w http.ResponseWriter, _ *http.Request) {
 
 	td := TimingsData{
 		Factor: tm.Factor,
-		Add:    float32(tm.Addition) / 1e9,
-		Sub:    float32(tm.Subtraction) / 1e9,
-		Mul:    float32(tm.Multiplication) / 1e9,
-		Div:    float32(tm.Division) / 1e9,
+		Add:    float32(tm.Addition) / float32(1*time.Second),
+		Sub:    float32(tm.Subtraction) / float32(1*time.Second),
+		Mul:    float32(tm.Multiplication) / float32(1*time.Second),
+		Div:    float32(tm.Division) / float32(1*time.Second),
 	}
 
 	SendJSON(w, td)

@@ -31,10 +31,10 @@ func PutTimings(w http.ResponseWriter, r *http.Request) {
 	}
 
 	tm.Factor = td.Factor
-	tm.Addition = time.Duration(1e9 * td.Add)
-	tm.Subtraction = time.Duration(1e9 * td.Sub)
-	tm.Multiplication = time.Duration(1e9 * td.Mul)
-	tm.Division = time.Duration(1e9 * td.Div)
+	tm.Addition = time.Duration(float32(1*time.Second) * td.Add)
+	tm.Subtraction = time.Duration(float32(1*time.Second) * td.Sub)
+	tm.Multiplication = time.Duration(float32(1*time.Second) * td.Mul)
+	tm.Division = time.Duration(float32(1*time.Second) * td.Div)
 
 	if err := dbprovider.Manager.UpdateTimings(tm); err != nil {
 		HTTPErrorUnavailable(w, err)
