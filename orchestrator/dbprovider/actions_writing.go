@@ -217,6 +217,9 @@ func (m *manager) CreateWorkers(amount uint) (workers []*models.Worker, err erro
 				}
 			}
 
+			if err = tx.Preload(consts.ModelTaskSubtasksField).First(task).Error; err != nil {
+				return err
+			}
 			readyTasks = append(readyTasks, task)
 		}
 

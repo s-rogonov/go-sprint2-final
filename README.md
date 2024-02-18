@@ -45,3 +45,40 @@ Answer:
   "id": 4
 }
 ```
+
+---
+
+> POST /tasks
+
+*Returns operations to process; Amount of operations are limited by argument*
+
+Example (asks 4 operations maximum):
+
+```bash
+curl -X POST localhost:8181/tasks -d '4'
+```
+
+Answer (there is only 2 operations available):
+
+```json
+[
+  {
+    "id": 1,
+    "op": "+",
+    "time": 1000000000,
+    "args": [
+      1,
+      2
+    ]
+  },
+  {
+    "id": 2,
+    "op": "*",
+    "time": 1000000000,
+    "args": [
+      3,
+      4
+    ]
+  }
+]
+```
