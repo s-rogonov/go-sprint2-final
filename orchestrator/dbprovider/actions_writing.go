@@ -11,7 +11,6 @@ import (
 	"dbprovider/helpers"
 	"dbprovider/models"
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 )
 
 var (
@@ -140,19 +139,20 @@ func (m *manager) UpdateQuery(query *models.Query) error {
 }
 
 func (m *manager) CreateWorkers(amount uint) (workers []*models.Worker, err error) {
+	m.lock4update.Lock()
+	defer m.lock4update.Unlock()
+
 	err = m.db.Transaction(func(tx *gorm.DB) (err error) {
+		var readyTasks []*models.Task
+
 		var rows *sql.Rows
+
 		{ // run rows selector
 			rows, err =
-				tx.Clauses(
-					clause.Locking{
-						Strength: clause.LockingStrengthUpdate,    // prevent rows from access from other threads
-						Options:  clause.LockingOptionsSkipLocked, // skip locked rows
-					},
+				tx.Joins(
+					consts.ModelTaskLastWorkerField,
 				).Model(
 					models.Task{},
-				).Preload(
-					consts.ModelTaskLastWorkerField,
 				).Where(
 					models.Task{
 						IsDone:  false,
@@ -180,8 +180,6 @@ func (m *manager) CreateWorkers(amount uint) (workers []*models.Worker, err erro
 			return err
 		}
 
-		var readyTasks []*models.Task
-
 		for rows.Next() && uint(len(readyTasks)) < amount {
 			task := &models.Task{}
 
@@ -193,7 +191,7 @@ func (m *manager) CreateWorkers(amount uint) (workers []*models.Worker, err erro
 			// Perform operations on each task
 			if task.LastWorker != nil {
 				deadline := task.LastWorker.CreatedAt.Add(time.Duration(timings.Factor * float32(task.Duration)))
-				if now.Before(deadline) {
+				if deadline.After(now) {
 					continue // task is still in progress
 				}
 			}
@@ -208,7 +206,8 @@ func (m *manager) CreateWorkers(amount uint) (workers []*models.Worker, err erro
 		workers = make([]*models.Worker, len(readyTasks))
 		for i, task := range readyTasks {
 			workers[i] = &models.Worker{
-				TargetTask: task,
+				TargetTask:   task,
+				TargetTaskID: task.ID,
 			}
 			task.LastWorker = workers[i]
 			task.LastWorkerID = 0

@@ -3,6 +3,7 @@ package dbprovider
 import (
 	"errors"
 	"os"
+	"sync"
 	"testing"
 	"time"
 
@@ -304,5 +305,114 @@ func TestWorkers(t *testing.T) {
 	if !q.IsDone || q.Result != 1 {
 		t.Error("query entity is not finished")
 		t.Error(">>>", q)
+	}
+}
+
+func skipLongTests() bool {
+	longTests, ok := os.LookupEnv("LONG_TESTS")
+	if !ok {
+		longTests = ""
+	}
+
+	return longTests == ""
+}
+
+func TestParallelWorkers(t *testing.T) {
+	if skipLongTests() {
+		t.Skip("needs more than 1k records in DB")
+		return
+	}
+
+	if err := Manager.InitDB(); err != nil {
+		t.Fatal(err)
+	}
+
+	for i := 0; i < 1000; i++ {
+		t1 := &models.Task{
+			Operation: "",
+			Index:     0,
+			Result:    1.0,
+			IsDone:    true,
+		}
+
+		t2 := &models.Task{
+			Operation: "",
+			Index:     1,
+			Result:    2.0,
+			IsDone:    true,
+		}
+
+		t3 := &models.Task{
+			Operation: "+",
+			Duration:  2 * time.Hour,
+			Subtasks:  []*models.Task{t1, t2},
+		}
+
+		q := &models.Query{
+			Expression: "1+2",
+			BadMessage: "",
+			Tasks:      []*models.Task{t1, t2, t3},
+		}
+
+		if err := Manager.NewQuery(q); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	var workers1 []*models.Worker
+	var workers2 []*models.Worker
+
+	var wg sync.WaitGroup
+	wg.Add(2)
+	go func() {
+		var err error
+		workers1, err = Manager.CreateWorkers(500)
+		if err != nil {
+			t.Error(err)
+		}
+		wg.Done()
+	}()
+	go func() {
+		var err error
+		workers2, err = Manager.CreateWorkers(500)
+		if err != nil {
+			t.Error(err)
+		}
+		wg.Done()
+	}()
+	wg.Wait()
+
+	if len(workers1) == 0 {
+		t.Error("no workers for 1st routine")
+	}
+	if len(workers2) == 0 {
+		t.Error("no workers for 2nd routine")
+	}
+
+	t.Logf("workers1: %d total", len(workers1))
+	t.Logf("workers2: %d total", len(workers2))
+
+	ids := make(map[uint]uint)
+	count := 0
+	for _, w := range workers1 {
+		ids[w.TargetTaskID] += 1
+		if ids[w.TargetTaskID] >= 2 {
+			count += 1
+			// t.Errorf("single call returns workers for the same task (taskid: %d)", w.TargetTaskID)
+		}
+	}
+	if count > 0 {
+		t.Errorf("single call returns workers for the same task (total: %d)", count)
+	}
+
+	count = 0
+	for _, w := range workers2 {
+		if ids[w.TargetTaskID] > 0 {
+			count += 1
+			// t.Errorf("parallel call duplicates workers for the task (taskid: %d)", w.TargetTaskID)
+		}
+	}
+	if count > 0 {
+		t.Errorf("parallel call duplicates workers for the task (total: %d)", count)
 	}
 }

@@ -3,6 +3,7 @@ package dbprovider
 import (
 	"context"
 	"os"
+	"sync"
 
 	"consts"
 	"dbprovider/models"
@@ -26,7 +27,8 @@ type Actions interface {
 }
 
 type manager struct {
-	db *gorm.DB
+	db          *gorm.DB
+	lock4update sync.Mutex
 }
 
 func (m *manager) getDB() *gorm.DB {
@@ -42,8 +44,11 @@ func InitConnection() {
 	}
 
 	db, err := gorm.Open(sqlite.Open(dbname), &gorm.Config{})
+
 	if err != nil {
 		panic(err)
 	}
-	Manager = &manager{db: db}
+	Manager = &manager{
+		db: db,
+	}
 }
