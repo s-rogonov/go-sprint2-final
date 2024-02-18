@@ -7,7 +7,7 @@ import (
 )
 
 func FinishWorker(db *gorm.DB, worker *models.Worker, result float64) error {
-	if db != nil && worker.Target == nil {
+	if db != nil && worker.TargetTask == nil {
 		err := db.Preload(consts.ModelWorkerTargetField).First(worker).Error
 		if err != nil {
 			return err
@@ -24,11 +24,11 @@ func FinishWorker(db *gorm.DB, worker *models.Worker, result float64) error {
 		}
 	}
 
-	return FinishTask(db, worker.Target, worker.Result)
+	return FinishTask(db, worker.TargetTask, worker.Result)
 }
 
 func FinishTask(db *gorm.DB, target *models.Task, result float64) error {
-	if db != nil && (target.Parent == nil || target.Target == nil) {
+	if db != nil && (target.ParentTask == nil || target.TargetQuery == nil) {
 		err := db.Preload(consts.ModelTaskTargetField).Preload(consts.ModelTaskParentField).First(target).Error
 		if err != nil {
 			return err
@@ -45,10 +45,10 @@ func FinishTask(db *gorm.DB, target *models.Task, result float64) error {
 		}
 	}
 
-	if target.Parent == nil {
-		return FinishQuery(db, target.Target, result)
+	if target.ParentTask == nil {
+		return FinishQuery(db, target.TargetQuery, result)
 	} else {
-		return IncrementFinishedSubtasks(db, target.Parent)
+		return IncrementFinishedSubtasks(db, target.ParentTask)
 	}
 }
 

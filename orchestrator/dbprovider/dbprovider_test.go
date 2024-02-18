@@ -23,8 +23,7 @@ func TestMain(m *testing.M) {
 }
 
 func TestInitDB(t *testing.T) {
-	err := Manager.InitDB()
-	if err != nil {
+	if err := Manager.InitDB(); err != nil {
 		t.Fatal(err)
 	}
 
@@ -97,13 +96,13 @@ func TestNewQuery(t *testing.T) {
 	if t3.ID == 0 {
 		t.Fatal("main task entity wasn't created")
 	}
-	if t1.ParentID != t3.ID {
+	if t1.ParentTaskID != t3.ID {
 		t.Fatal("first child task entity isn't associated with main task entity")
 	}
-	if t2.ParentID != t3.ID {
+	if t2.ParentTaskID != t3.ID {
 		t.Fatal("first child task entity isn't associated with main task entity")
 	}
-	if t1.TargetID != q.ID || t2.TargetID != q.ID || t3.TargetID != q.ID {
+	if t1.TargetQueryID != q.ID || t2.TargetQueryID != q.ID || t3.TargetQueryID != q.ID {
 		t.Fatal("task entities isn't associated with query entity")
 	}
 	if !t1.IsDone || !t2.IsDone {
@@ -125,9 +124,9 @@ func TestNewQuery(t *testing.T) {
 	}
 
 	{
-		t1.Subtasks = nil // clear associations
-		t1.Parent = nil   // clear associations
-		t1.Target = nil   // clear associations
+		t1.Subtasks = nil    // clear associations
+		t1.ParentTask = nil  // clear associations
+		t1.TargetQuery = nil // clear associations
 		tx := &models.Task{}
 		Manager.getDB().First(tx, t1.ID)
 		if !cmp.Equal(t1, tx) {
@@ -136,9 +135,9 @@ func TestNewQuery(t *testing.T) {
 			t.Error(">>>", tx)
 		}
 
-		t2.Subtasks = nil // clear associations
-		t2.Parent = nil   // clear associations
-		t2.Target = nil   // clear associations
+		t2.Subtasks = nil    // clear associations
+		t2.ParentTask = nil  // clear associations
+		t2.TargetQuery = nil // clear associations
 		tx = &models.Task{}
 		Manager.getDB().First(tx, t2.ID)
 		if !cmp.Equal(t2, tx) {
@@ -147,9 +146,9 @@ func TestNewQuery(t *testing.T) {
 			t.Error(">>>", tx)
 		}
 
-		t3.Subtasks = nil // clear associations
-		t3.Parent = nil   // clear associations
-		t3.Target = nil   // clear associations
+		t3.Subtasks = nil    // clear associations
+		t3.ParentTask = nil  // clear associations
+		t3.TargetQuery = nil // clear associations
 		tx = &models.Task{}
 		Manager.getDB().First(tx, t3.ID)
 		if !cmp.Equal(t3, tx) {
@@ -206,5 +205,104 @@ func TestUpdateQuery(t *testing.T) {
 
 	if err := Manager.UpdateQuery(&models.Query{}); !errors.Is(err, ErrUpdateQueryWithoutID) {
 		t.Errorf("expected %v got %v", ErrUpdateQueryWithoutID, err)
+	}
+}
+
+func TestWorkers(t *testing.T) {
+	if err := Manager.InitDB(); err != nil {
+		t.Fatal(err)
+	}
+
+	t1 := &models.Task{
+		Operation: "",
+		Result:    1.0,
+		IsDone:    true,
+	}
+
+	t2 := &models.Task{
+		Operation: "",
+		Result:    2.0,
+		IsDone:    true,
+	}
+
+	t3 := &models.Task{
+		Operation: "+",
+		Duration:  2 * time.Second,
+		Subtasks:  []*models.Task{t1, t2},
+	}
+
+	t4 := &models.Task{
+		Operation: "",
+		Result:    3.0,
+		IsDone:    true,
+	}
+
+	t5 := &models.Task{
+		Operation: "/",
+		Duration:  2 * time.Second,
+		Subtasks:  []*models.Task{t3, t4},
+	}
+
+	q := &models.Query{
+		Expression: "1+2",
+		BadMessage: "",
+		Tasks:      []*models.Task{t1, t2, t3, t4, t5},
+	}
+
+	if err := Manager.NewQuery(q); err != nil {
+		t.Fatal(err)
+	}
+
+	workerID := uint(0)
+	{
+		workers, err := Manager.CreateWorkers(10)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if len(workers) != 1 {
+			t.Errorf("expected 1 worker, got %d", len(workers))
+		}
+
+		if t3.ID != workers[0].TargetTask.ID {
+			t.Error("got worker for wrong task")
+			t.Error(">>>", t3)
+			t.Error(">>>", workers[0].TargetTask)
+		}
+
+		workerID = workers[0].ID
+	}
+
+	if err := Manager.SetWorkResult(workerID, 3); err != nil {
+		t.Fatal(err)
+	}
+
+	{
+		workers, err := Manager.CreateWorkers(10)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if len(workers) != 1 {
+			t.Errorf("expected 1 worker, got %d", len(workers))
+		}
+
+		if t5.ID != workers[0].TargetTask.ID {
+			t.Error("got worker for wrong task")
+			t.Error(">>>", t5)
+			t.Error(">>>", workers[0].TargetTask)
+		}
+
+		workerID = workers[0].ID
+	}
+
+	if err := Manager.SetWorkResult(workerID, 1); err != nil {
+		t.Fatal(err)
+	}
+
+	Manager.getDB().First(q, q.ID)
+	if !q.IsDone || q.Result != 1 {
+		t.Error("query entity is not finished")
+		t.Error(">>>", q)
 	}
 }

@@ -5,9 +5,9 @@ const (
 	DbProductionName = "sqlite.db"
 	DbTestName       = "test_sqlite.db"
 
-	ModelTaskParentField     = "Parent"
-	ModelTaskTargetField     = "Target"
-	ModelWorkerTargetField   = "Target"
+	ModelTaskParentField     = "ParentTask"
+	ModelTaskTargetField     = "TargetQuery"
+	ModelWorkerTargetField   = "TargetTask"
 	ModelTaskLastWorkerField = "LastWorker"
 
 	ModelQueryTasksField      = "Tasks"

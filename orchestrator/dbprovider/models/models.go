@@ -26,7 +26,7 @@ type Query struct {
 	IsDone       bool `gorm:"index"`
 	Result       float64
 
-	Tasks []*Task `gorm:"foreignKey:TargetID"`
+	Tasks []*Task `gorm:"foreignKey:TargetQueryID"`
 }
 
 type Task struct {
@@ -36,12 +36,12 @@ type Task struct {
 	Duration  time.Duration
 	Index     uint
 
-	Parent       *Task   `gorm:"foreignkey:ParentID;association_foreignkey:ID"`
-	ParentID     uint    `gorm:"index"`
-	Target       *Query  `gorm:"foreignkey:TargetID;association_foreignkey:ID"`
-	TargetID     uint    `gorm:"index"`
-	LastWorker   *Worker `gorm:"foreignkey:LastWorkerID;association_foreignkey:ID"`
-	LastWorkerID uint    `gorm:"index"`
+	ParentTask    *Task   `gorm:"foreignKey:ParentTaskID"`
+	ParentTaskID  uint    `gorm:"index"`
+	TargetQuery   *Query  `gorm:"foreignKey:TargetQueryID"`
+	TargetQueryID uint    `gorm:"index"`
+	LastWorker    *Worker `gorm:"foreignKey:LastWorkerID"`
+	LastWorkerID  uint    `gorm:"index"`
 
 	TotalSubtasks    uint
 	FinishedSubtasks uint
@@ -49,15 +49,15 @@ type Task struct {
 	IsReady          bool `gorm:"index"`
 	Result           float64
 
-	Workers  []*Worker `gorm:"foreignKey:TargetID"`
-	Subtasks []*Task   `gorm:"foreignKey:ParentID"`
+	Workers  []*Worker `gorm:"foreignKey:TargetTaskID"`
+	Subtasks []*Task   `gorm:"foreignKey:ParentTaskID"`
 }
 
 type Worker struct {
 	gorm.Model
 
-	Target   *Task `gorm:"foreignkey:TargetID;association_foreignkey:ID"`
-	TargetID uint  `gorm:"index"`
-	IsDone   bool  `gorm:"index"`
-	Result   float64
+	TargetTask   *Task `gorm:"foreignkey:TargetTaskID"`
+	TargetTaskID uint  `gorm:"index"`
+	IsDone       bool  `gorm:"index"`
+	Result       float64
 }

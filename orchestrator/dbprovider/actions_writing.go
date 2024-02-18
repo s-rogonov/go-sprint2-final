@@ -60,10 +60,10 @@ func initQueryTasks(tx *gorm.DB, query *models.Query) error {
 
 	for _, t := range query.Tasks {
 		helpers.DefaultsForTask(t)
-		t.Target = query
+		t.TargetQuery = query
 		for i, st := range t.Subtasks {
 			st.Index = uint(i)
-			st.Parent = t
+			st.ParentTask = t
 		}
 	}
 
@@ -176,7 +176,7 @@ func (m *manager) CreateWorkers(amount uint) (workers []*models.Worker, err erro
 
 		now := time.Now()
 		timings := models.Timings{}
-		if err = m.db.First(&timings).Error; err != nil {
+		if err = tx.First(&timings).Error; err != nil {
 			return err
 		}
 
@@ -208,12 +208,12 @@ func (m *manager) CreateWorkers(amount uint) (workers []*models.Worker, err erro
 		workers = make([]*models.Worker, len(readyTasks))
 		for i, task := range readyTasks {
 			workers[i] = &models.Worker{
-				Target: task,
+				TargetTask: task,
 			}
 			task.LastWorker = workers[i]
 			task.LastWorkerID = 0
 
-			if err = m.db.Save(task).Error; err != nil {
+			if err = tx.Save(task).Error; err != nil {
 				return err
 			}
 		}
