@@ -82,3 +82,21 @@ Answer (there is only 2 operations available):
   }
 ]
 ```
+
+---
+
+> PUT /result
+
+*Set operation result*
+
+Example:
+
+```bash
+curl -X PUT localhost:8181/result -d '{"id":1,"result":3.0}'
+```
+
+Answer:
+
+```
+OK
+```
