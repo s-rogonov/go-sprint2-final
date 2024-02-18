@@ -4,14 +4,44 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"time"
 
 	"dbprovider"
 	"dbprovider/models"
 	"parser"
 )
 
-func PutTimings(writer http.ResponseWriter, request *http.Request) {
+func PutTimings(w http.ResponseWriter, r *http.Request) {
+	bytes, err := io.ReadAll(r.Body)
+	if err != nil {
+		HTTPErrorUnavailable(w, err)
+		return
+	}
 
+	var td TimingsData
+	if err := json.Unmarshal(bytes, &td); err != nil {
+		HTTPErrorUnavailable(w, err)
+		return
+	}
+
+	tm := &models.Timings{}
+	if err := dbprovider.Manager.GetTimings(tm); err != nil {
+		HTTPErrorUnavailable(w, err)
+		return
+	}
+
+	tm.Factor = td.Factor
+	tm.Addition = time.Duration(1e9 * td.Add)
+	tm.Subtraction = time.Duration(1e9 * td.Sub)
+	tm.Multiplication = time.Duration(1e9 * td.Mul)
+	tm.Division = time.Duration(1e9 * td.Div)
+
+	if err := dbprovider.Manager.UpdateTimings(tm); err != nil {
+		HTTPErrorUnavailable(w, err)
+		return
+	}
+
+	HTTPOk(w)
 }
 
 type Result struct {

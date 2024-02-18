@@ -1,6 +1,32 @@
 # go-sprint2-final
 
-## Orchestrator
+## Orchestrator (GET)
+
+---
+
+### 1. `GET /timings`
+
+*Return timings; `factor` is a threshold to identify workers with `status=timeout`*
+
+Example:
+
+```bash
+curl -X GET localhost:8181/timings
+```
+
+Answer:
+
+```json
+{
+  "factor": 2,
+  "add": 10,
+  "sub": 100,
+  "mul": 20,
+  "div": 200
+}
+```
+
+## Orchestrator (PUT/POST)
 
 ---
 
@@ -100,3 +126,21 @@ Answer:
 ```
 OK
 ```
+
+### 5. `PUT /timings`
+
+*Set operator types duration*
+
+Example (add/sub/mul/div in seconds):
+
+```bash
+curl -X PUT localhost:8181/timings -d '{"factor":2,"add":10,"sub":100,"mul":20,"div":200}'
+```
+
+Answer:
+
+```
+OK
+```
+
+---

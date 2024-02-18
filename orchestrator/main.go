@@ -29,6 +29,8 @@ func main() {
 	r.Post("/query", handlers.PostQuery)
 	r.Post("/tasks", handlers.PostTasks)
 
+	r.Get("/timings", handlers.GetTimings)
+
 	err := http.ListenAndServe(fmt.Sprintf(`:%s`, port), r)
 	if err != nil {
 		panic(err)
