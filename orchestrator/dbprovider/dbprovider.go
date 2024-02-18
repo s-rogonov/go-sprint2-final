@@ -16,6 +16,7 @@ type Actions interface {
 	getDB() *gorm.DB // for test purposes only
 	WithContext(ctx context.Context) Actions
 	InitDB() error
+	ClearDB() error
 
 	UpdateTimings(timings *models.Timings) error
 
@@ -24,6 +25,8 @@ type Actions interface {
 
 	CreateWorkers(amount uint) ([]*models.Worker, error)
 	SetWorkResult(workerID uint, result float64) error
+
+	GetTimings(timings *models.Timings) error
 }
 
 type manager struct {
@@ -51,5 +54,21 @@ func InitConnection() {
 	Manager = &manager{
 		db:      db,
 		rwMutex: &sync.RWMutex{},
+	}
+
+	if err := Manager.InitDB(); err != nil {
+		panic(err)
+	}
+
+	count := int64(0)
+	if err := db.Model(models.Timings{}).Count(&count).Error; err != nil {
+		panic(err)
+	}
+
+	if count == 0 {
+		err := Manager.ClearDB()
+		if err != nil {
+			panic(err)
+		}
 	}
 }

@@ -34,6 +34,13 @@ func (m *manager) InitDB() error {
 		return err
 	}
 
+	return nil
+}
+
+func (m *manager) ClearDB() error {
+	m.rwMutex.Lock()
+	defer m.rwMutex.Unlock()
+
 	if err := helpers.DropTables(m.db); err != nil {
 		return err
 	}
