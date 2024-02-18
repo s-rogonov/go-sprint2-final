@@ -8,6 +8,7 @@ import (
 	"consts"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"handlers"
 )
 
 func main() {
@@ -18,14 +19,12 @@ func main() {
 
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
-	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		_, err := w.Write([]byte("welcome"))
-		if err != nil {
-			http.Error(w, http.StatusText(http.StatusServiceUnavailable), http.StatusServiceUnavailable)
-			return
-		}
+	r.Put("/query", handlers.PutQuery)
+	r.Put("/timings", handlers.PutTimings)
+	r.Put("/result", handlers.PutResult)
 
-	})
+	r.Put("/query", handlers.PostQuery)
+	r.Put("/tasks", handlers.PostTasks)
 
 	err := http.ListenAndServe(fmt.Sprintf(`:%s`, port), r)
 	if err != nil {

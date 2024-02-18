@@ -7,4 +7,5 @@ use (
 	web
 	consts
 	orchestrator/parser
+	orchestrator/handlers
 )
