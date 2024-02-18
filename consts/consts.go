@@ -5,6 +5,10 @@ const (
 	DbProductionName = "sqlite.db"
 	DbTestName       = "test_sqlite.db"
 
+	EnvPort = "PORT"
+
+	OrchestratorDefaultPort = "8181"
+
 	ModelTaskParentField     = "ParentTask"
 	ModelTaskTargetField     = "TargetQuery"
 	ModelWorkerTargetField   = "TargetTask"
