@@ -6,4 +6,5 @@ use (
 	orchestrator/dbprovider
 	web
 	consts
+	orchestrator/parser
 )
