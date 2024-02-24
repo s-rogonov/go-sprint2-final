@@ -2,10 +2,10 @@ go 1.18
 
 use (
 	agent
+	consts
 	orchestrator
 	orchestrator/dbprovider
-	web
-	consts
-	orchestrator/parser
 	orchestrator/handlers
+	orchestrator/parser
+	web
 )
